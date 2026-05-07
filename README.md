@@ -1,261 +1,163 @@
 # AI Repository Security Baseline
 
-A ready-to-use boilerplate of security-focused instruction files for AI coding agents, assistants, and IDE plugins. Drop these files into any repository to establish a consistent security baseline across all AI tools your team uses.
+## Why this exists
 
-## The Problem
+AI coding agents are everywhere now. Cursor, Copilot, Claude Code, Codex, Windsurf, Cline, Junie, Devin — every developer has at least one open in their editor, and most teams have several in rotation. They're useful, fast, and frankly hard to live without once you've gotten used to them.
 
-AI coding agents (Copilot, Cursor, Claude Code, Codex, Cline, Windsurf, etc.) are powerful but introduce new risks:
+But they also read your code. They read your config files. They read whatever you point them at. And without a bit of guidance, they will happily peek into your `.env` file, suggest a package that doesn't actually exist (and that an attacker has helpfully published under that exact name), edit your CI pipeline to "fix" a build, or paste a database connection string into a comment because you asked it to "document this function."
 
-- **Secret leakage** -- agents reading `.env` files and exposing credentials in suggestions or logs
-- **Supply chain attacks** -- agents suggesting malicious or typosquatted packages
-- **Data exfiltration** -- agents accessing files outside the repository or sending code to external services
-- **Pipeline tampering** -- agents modifying CI/CD configurations to weaken security
-- **Privacy violations** -- agents generating code that logs PII or adds unauthorized tracking
-- **Prompt injection** -- malicious instructions hidden in code comments or PR descriptions
+None of that is the agent being malicious. They're following instructions and trying to be helpful. The problem is that the instructions usually don't tell them what *not* to do.
 
-## The Solution
+This repository is a starting point for fixing that.
 
-This repository provides a **single source of truth** (`AGENTS.md`) with comprehensive security, privacy, access control, testing, accessibility, and CI/CD rules, plus tool-specific configuration files that reference it.
+## What it is
 
-Every AI agent reads its own config file format, but they all point back to the same shared rules.
+A drop-in set of instruction files for the most common AI agents and IDE plugins. Every file points at one shared document — `AGENTS.md` — that lays out the rules the project follows: don't touch `.env` files, don't add dependencies without asking, don't modify the CI pipeline, write tests, follow the privacy rules, and so on.
 
-## Supported Tools
+You drop the files into your repo, fill in the placeholders for your project, commit, and you're done. From that point on, whichever agent a developer happens to be using will read its own preferred config file and end up working from the same playbook as everyone else.
 
-| Tool | Config File(s) | Auto-loaded |
-|------|---------------|-------------|
-| **OpenAI Codex** | [`AGENTS.md`](AGENTS.md) | Yes |
-| **Claude Code** | [`CLAUDE.md`](CLAUDE.md) | Yes |
-| **Cursor** | [`.cursor/rules/*.mdc`](.cursor/rules/) | Yes |
-| **GitHub Copilot** | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | Yes |
-| **Windsurf (Codeium)** | [`.windsurfrules`](.windsurfrules) | Yes |
-| **Cline** | [`.clinerules`](.clinerules) | Yes |
-| **Continue.dev** | [`.continuerules`](.continuerules) | Yes |
-| **Aider** | [`.aider.conf.yml`](.aider.conf.yml), [`CONVENTIONS.md`](CONVENTIONS.md) | Yes |
-| **Amazon Q** | [`.amazonq/rules/`](.amazonq/rules/) | Yes |
-| **JetBrains Junie** | [`.junie/guidelines.md`](.junie/guidelines.md) | Yes |
-| **Devin** | [`devin.md`](devin.md) | Yes |
-| **Sourcegraph Cody** | [`.sourcegraph/cody.json`](.sourcegraph/cody.json) | Yes |
+The goal isn't to make agents less useful. It's to take ten minutes once, set sensible defaults, and stop thinking about it.
 
-### Ignore Files
+## How to use it
 
-| File | Tool |
-|------|------|
-| [`.aiignore`](.aiignore) | Universal reference (all tools) |
-| [`.cursorignore`](.cursorignore) | Cursor |
-| [`.clineignore`](.clineignore) | Cline |
-| [`.aiderignore`](.aiderignore) | Aider |
+The short version:
 
-## What's Covered
+1. Copy the files from this repo into your project.
+2. Open `AGENTS.md` and fill in the parts marked `[PLACEHOLDER]` (project name, tech stack, naming conventions, etc.). Most agents will offer to help you do this — they'll read your code and propose values for you to approve.
+3. Delete any tool configs you don't use. If your team only uses Cursor and Copilot, there's no reason to keep the Aider or Devin files around.
+4. Commit and push.
 
-The baseline covers six security domains:
+That's it. The agents will pick up the files automatically the next time someone uses them in the repo.
 
-### 1. Security
-- Secret/credential protection (`.env` files, API keys, tokens, passwords)
-- Secret pattern detection with regex patterns for common formats
-- Secure coding practices (OWASP Top 10, input validation, output encoding)
-- Protected file lists (CI/CD configs, infrastructure, lock files)
+If you only want the bare minimum: keep `AGENTS.md` and `.aiignore`. Everything else is per-tool sugar that points back to those two.
 
-### 2. Privacy
-- Data minimization and PII handling
-- Logging and telemetry restrictions
-- GDPR/CCPA compliance considerations
-- AI agent data boundary rules
+## What's in the box
 
-### 3. Access Control
-- Filesystem sandboxing (repository-only access)
-- Network restriction guidance
-- Command execution allowlists/blocklists
-- Credential store isolation
+### The hub
 
-### 4. Testing
-- Test-before-commit policy
-- Coverage requirements for new code
-- Regression test requirements for bug fixes
-- Test quality standards
+- **`AGENTS.md`** — the source of truth. Fifteen sections covering project info, security rules, privacy rules, access restrictions, testing requirements, accessibility, CI/CD policies, dependency rules, and how agents themselves should behave. This is the file everything else points to.
 
-### 5. Accessibility
-- WCAG 2.1 AA compliance standards
-- Semantic HTML requirements
-- Keyboard navigation rules
-- Color contrast and visual design standards
+### Tool-specific configs
 
-### 6. CI/CD & Supply Chain
-- Pipeline protection (no unauthorized modifications)
-- Dependency approval workflow
-- Typosquatting prevention
-- Lock file integrity
+Each of these files exists because the tool in question reads its own filename. They all delegate the actual rules to `AGENTS.md` so you don't have to maintain twelve copies of the same content.
 
-## Quick Start
+- `CLAUDE.md` — Claude Code
+- `.cursor/rules/*.mdc` — Cursor (six rule files, scoped by file type)
+- `.github/copilot-instructions.md` — GitHub Copilot
+- `.windsurfrules` — Windsurf
+- `.clinerules` — Cline
+- `.continuerules` — Continue.dev
+- `.aider.conf.yml` + `CONVENTIONS.md` — Aider
+- `.amazonq/rules/` — Amazon Q Developer
+- `.junie/guidelines.md` — JetBrains Junie
+- `devin.md` — Devin
+- `.sourcegraph/cody.json` — Sourcegraph Cody
+- (OpenAI Codex reads `AGENTS.md` directly, no extra file needed)
 
-### 1. Copy files to your repository
+### Ignore files
 
-```bash
-# Clone this boilerplate
-git clone https://github.com/your-org/ai-repository-security-baseline.git /tmp/ai-baseline
+These tell agents which files not to read at all — `.env`, private keys, cloud credentials, SSH keys, that kind of thing. Same idea as `.gitignore`, but for AI tools.
 
-# Copy all files to your project
-cp -r /tmp/ai-baseline/AGENTS.md your-project/
-cp -r /tmp/ai-baseline/CLAUDE.md your-project/
-cp -r /tmp/ai-baseline/CONVENTIONS.md your-project/
-cp -r /tmp/ai-baseline/devin.md your-project/
-cp -r /tmp/ai-baseline/.windsurfrules your-project/
-cp -r /tmp/ai-baseline/.clinerules your-project/
-cp -r /tmp/ai-baseline/.continuerules your-project/
-cp -r /tmp/ai-baseline/.aider.conf.yml your-project/
-cp -r /tmp/ai-baseline/.aiignore your-project/
-cp -r /tmp/ai-baseline/.cursorignore your-project/
-cp -r /tmp/ai-baseline/.clineignore your-project/
-cp -r /tmp/ai-baseline/.aiderignore your-project/
-cp -r /tmp/ai-baseline/.cursor your-project/
-cp -r /tmp/ai-baseline/.github your-project/
-cp -r /tmp/ai-baseline/.amazonq your-project/
-cp -r /tmp/ai-baseline/.junie your-project/
-cp -r /tmp/ai-baseline/.sourcegraph your-project/
-```
+- `.aiignore` — the canonical list, used as a reference for the others
+- `.cursorignore`, `.clineignore`, `.aiderignore` — tool-specific copies
 
-### 2. Customize AGENTS.md
+## What the rules actually cover
 
-Open `AGENTS.md` and fill in the `[PLACEHOLDER]` sections:
+The instructions in `AGENTS.md` are organized around six main themes. Here's what each one is trying to prevent.
 
-- **Project Overview** -- name, description, purpose
-- **Architecture** -- patterns, components, decisions
-- **Tech Stack** -- languages, frameworks, databases
-- **File Structure** -- key directories and their purposes
-- **Naming Conventions** -- files, classes, functions, variables
-- **Git Workflow** -- branching strategy, merge policy
-- **Allowed Commands** -- build, test, lint commands for your project
-- **Testing Commands** -- exact test commands for your project
-- **Protected Files** -- add project-specific protected files
+### Security
 
-> **Tip:** Most AI agents will offer to help fill in these sections by analyzing your repository. They'll propose changes with a before/after diff for your approval.
+The big one. The rules tell agents:
 
-### 3. Customize .aider.conf.yml
+- Don't read `.env` or any other secrets file. Ever. (`.env.example` is fine.)
+- Don't hardcode API keys, tokens, passwords, or connection strings.
+- If a user accidentally pastes a secret into a prompt, warn them and suggest they rotate it.
+- Watch for common secret patterns (AWS keys, JWTs, private keys, database URLs) and flag them when they appear.
+- Use parameterized queries, validate input, encode output. The usual OWASP Top 10 hygiene.
+- Don't touch certain files (CI configs, Dockerfiles, lock files, infrastructure code, `CODEOWNERS`) without explicit permission and a before/after diff.
 
-Uncomment and set the test and lint commands for your project.
+### Privacy
 
-### 4. Remove unused tool configs
+Less talked about than security, but just as important:
 
-If your team doesn't use certain tools, you can safely remove their config files. The remaining configs will continue to work independently.
+- Don't log personally identifiable information.
+- Mask or redact PII in error messages.
+- Don't add tracking, telemetry, or analytics without a real consent mechanism.
+- Encrypt sensitive data at rest and in transit.
+- Code should support the obvious GDPR rights — access, deletion, export.
 
-### 5. Commit and push
+### Access
 
-```bash
-git add -A
-git commit -m "Add AI agent security baseline configuration"
-git push
-```
+What the agent is allowed to touch:
 
-## Only Use Some Tools?
+- Stay inside the repository. No reaching into `~/.ssh`, `~/.aws`, or the user's home directory.
+- No making outbound network calls beyond what's strictly needed for the task.
+- No running destructive commands (`rm -rf`, dropping databases, force-pushing) without confirmation.
+- No installing global packages or modifying system config.
 
-Pick only what you need:
+### Testing
 
-| If you use... | Copy these files |
-|---------------|-----------------|
-| **Any AI tool** | `AGENTS.md`, `.aiignore` |
-| + Claude Code | `CLAUDE.md` |
-| + Cursor | `.cursor/rules/`, `.cursorignore` |
-| + GitHub Copilot | `.github/copilot-instructions.md` |
-| + Windsurf | `.windsurfrules` |
-| + Cline | `.clinerules`, `.clineignore` |
-| + Continue.dev | `.continuerules` |
-| + Aider | `.aider.conf.yml`, `CONVENTIONS.md`, `.aiderignore` |
-| + Amazon Q | `.amazonq/rules/` |
-| + JetBrains Junie | `.junie/guidelines.md` |
-| + Devin | `devin.md` |
-| + Sourcegraph Cody | `.sourcegraph/cody.json` |
+A simple rule: tests run before every commit. New code gets new tests. Bug fixes get regression tests. Don't disable existing tests to make new code pass. Don't use `--no-verify` to skip the hooks.
 
-## File Structure
+### Accessibility
 
-```
-your-project/
-├── AGENTS.md                          # Central source of truth (all agents read this)
-├── CLAUDE.md                          # Claude Code specific config
-├── CONVENTIONS.md                     # Aider conventions file
-├── devin.md                           # Devin instructions
-├── .windsurfrules                     # Windsurf rules
-├── .clinerules                        # Cline rules
-├── .continuerules                     # Continue.dev rules
-├── .aider.conf.yml                    # Aider configuration
-├── .aiignore                          # Universal AI ignore patterns
-├── .cursorignore                      # Cursor ignore patterns
-├── .clineignore                       # Cline ignore patterns
-├── .aiderignore                       # Aider ignore patterns
-├── .cursor/
-│   └── rules/
-│       ├── 00-core.mdc                # Core rules (always applied)
-│       ├── 01-security.mdc            # Security rules (always applied)
-│       ├── 02-privacy.mdc             # Privacy rules (always applied)
-│       ├── 03-testing.mdc             # Testing rules (test files)
-│       ├── 04-accessibility.mdc       # Accessibility rules (UI files)
-│       └── 05-dependencies.mdc        # Supply chain rules (package files)
-├── .github/
-│   └── copilot-instructions.md        # GitHub Copilot instructions
-├── .amazonq/
-│   └── rules/
-│       └── security.md                # Amazon Q security rules
-├── .junie/
-│   └── guidelines.md                  # JetBrains Junie guidelines
-└── .sourcegraph/
-    └── cody.json                      # Sourcegraph Cody config
-```
+If the project has a UI, it follows WCAG 2.1 AA. Semantic HTML, keyboard navigation, proper contrast, alt text — the standard expectations, written down so the agent has them in mind when generating components.
 
-## Design Principles
+### CI/CD and supply chain
 
-1. **Single source of truth** -- `AGENTS.md` contains all shared rules. Tool-specific files reference it.
-2. **Defense in depth** -- Rules are enforced at multiple layers: instruction files, ignore files, and the rules themselves tell agents to self-restrict.
-3. **Secure by default** -- Everything is restricted unless explicitly allowed.
-4. **Customizable** -- Placeholder sections make it easy to adapt to any project.
-5. **Agent self-governance** -- Agents must ask permission before modifying any rules, and must show before/after diffs.
-6. **Privacy by design** -- Privacy rules are baked in, not bolted on.
+The two areas where agents can do the most damage if they go off-script:
 
-## Security Model
+- Don't modify pipeline files (`.github/workflows/`, `.gitlab-ci.yml`, etc.) without explicit approval.
+- Don't add dependencies without asking. When proposing one, include the version, the popularity, the license, and any known vulnerabilities.
+- Verify package names — typosquatting is a real attack vector and AI agents are particularly susceptible to it because they sometimes invent package names that don't exist.
+- Don't regenerate lock files. Don't suppress vulnerability warnings.
 
-```
-┌─────────────────────────────────────────────────┐
-│                   AGENTS.md                      │
-│            (Central Source of Truth)              │
-│                                                   │
-│  Security | Privacy | Access | Testing | A11y     │
-│  CI/CD | Dependencies | Code Quality             │
-├─────────────────────────────────────────────────┤
-│                                                   │
-│  ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │
-│  │ CLAUDE.md│ │.cursor/  │ │copilot-          │ │
-│  │          │ │rules/    │ │instructions.md   │ │
-│  └──────────┘ └──────────┘ └──────────────────┘ │
-│  ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │
-│  │.windsurf │ │.cline    │ │.continue         │ │
-│  │rules     │ │rules     │ │rules             │ │
-│  └──────────┘ └──────────┘ └──────────────────┘ │
-│  ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │
-│  │devin.md  │ │.amazonq/ │ │.junie/           │ │
-│  │          │ │rules/    │ │guidelines.md     │ │
-│  └──────────┘ └──────────┘ └──────────────────┘ │
-│                                                   │
-├─────────────────────────────────────────────────┤
-│              Ignore Files Layer                   │
-│  .aiignore | .cursorignore | .clineignore | ...  │
-│  (Prevent agents from reading sensitive files)    │
-└─────────────────────────────────────────────────┘
-```
+## How the rules are structured
+
+Three things make this work:
+
+**One source of truth.** Every tool-specific file is short and ends with "for the actual rules, read `AGENTS.md`." When you want to change something, you change it in one place. No drift.
+
+**Defense in depth.** The rules tell agents what to do. The ignore files prevent agents from reading sensitive content even if they tried. And the rules also tell agents how to behave when they're unsure — ask, show a diff, wait for approval.
+
+**Placeholders, not assumptions.** The boilerplate doesn't pretend to know what your project is. Things like the tech stack, naming conventions, allowed commands, and branching strategy are marked `[PLACEHOLDER]`. The first time an agent reads the file, it'll usually offer to fill those in by analyzing your repo. You approve the changes (or don't), and from that point on the file describes your project specifically.
+
+## Customizing for your project
+
+When you first open `AGENTS.md`, you'll see placeholder sections for things like:
+
+- Project overview and architecture
+- Languages, frameworks, and databases
+- File structure
+- Naming conventions
+- Git workflow and branch types
+- Allowed commands (build, test, lint)
+- Project-specific protected files
+
+You don't have to fill them in by hand. Open the project in your AI tool of choice and ask it to help. It'll read the codebase, propose values, show you a diff, and wait for your sign-off. The rules require it to do this rather than just rewriting things on its own.
+
+You can also strip out anything you don't want. The accessibility rules are pointless if you're building a backend service. The CI/CD rules are pointless if you don't have CI yet. Delete what doesn't apply.
+
+## A note on what this isn't
+
+This is a baseline, not a fortress. It won't stop a determined attacker who has compromised your machine. It won't catch every possible secret leak. It won't make your code GDPR-compliant on its own. It won't replace a proper security review.
+
+What it does is set sensible defaults so that the most common, most boring failure modes — the agent reading `.env`, the agent installing `requets` instead of `requests`, the agent quietly editing your GitHub Actions workflow — don't happen by accident. Most "AI security incidents" are exactly that kind of thing. This file makes them harder to do.
 
 ## Contributing
 
-Contributions are welcome. When proposing changes:
-
-1. Ensure changes maintain consistency across all tool-specific files.
-2. Update `AGENTS.md` first, then propagate to tool-specific files.
-3. Test with at least one AI tool to verify the rules are picked up correctly.
-4. Follow the security model: restrictive by default, explicit allowlisting.
-
-## References
-
-- [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
-- [OWASP Agentic AI Threats](https://owasp.org/www-project-agentic-ai-threats/)
-- [SLSA Framework](https://slsa.dev/)
-- [OpenSSF Scorecard](https://securityscorecards.dev/)
-- [NIST AI Risk Management Framework](https://www.nist.gov/artificial-intelligence/risk-management-framework)
+If you find a rule that's missing, a tool that should be supported, or a pattern that could be tightened, open a PR. The only real expectation is consistency: changes should land in `AGENTS.md` first, then propagate to the tool-specific files.
 
 ## License
 
-Apache License 2.0 -- see [LICENSE](LICENSE) for details.
+Apache 2.0. Use it however you like.
+
+## Further reading
+
+If you want to go deeper on the security side:
+
+- [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
+- [OWASP Agentic AI Threats](https://owasp.org/www-project-agentic-ai-threats/)
+- [SLSA Framework](https://slsa.dev/) (supply chain integrity)
+- [OpenSSF Scorecard](https://securityscorecards.dev/)
+- [NIST AI Risk Management Framework](https://www.nist.gov/artificial-intelligence/risk-management-framework)
