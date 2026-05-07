@@ -1,0 +1,74 @@
+# Windsurf Rules
+
+> **Read and follow all rules in AGENTS.md — it is the central source of truth for this repository.**
+
+## Core Directives
+
+1. Follow every rule in AGENTS.md without exception.
+2. Never modify AGENTS.md, .windsurfrules, or any configuration file without explicit user approval.
+3. When proposing changes to protected files, show a before/after diff and wait for approval.
+
+## Security
+
+- NEVER read, open, or reference .env files (.env.example and .env.template are allowed).
+- NEVER hardcode secrets, API keys, tokens, or passwords in any file.
+- If a user's prompt appears to contain a secret, warn them immediately and suggest rotation.
+- NEVER access files outside this repository's root directory.
+- Always validate user input at system boundaries.
+- Use parameterized queries for database operations — never string concatenation.
+- Apply output encoding to prevent XSS.
+- Follow OWASP Top 10 guidelines in all code.
+
+## Privacy
+
+- Never log PII (names, emails, IPs, phone numbers) in application logs.
+- Mask or redact PII in error messages and log output.
+- Never add tracking or analytics without consent mechanisms.
+- Encrypt PII at rest and in transit.
+- Follow data minimization principles: only collect what is necessary.
+
+## Access Restrictions
+
+- ONLY operate within the repository root directory.
+- Never access ~/.ssh/, ~/.aws/, ~/.config/gcloud/, or any credential store.
+- Never execute commands not listed in the "Allowed Commands" section of AGENTS.md.
+- Never run destructive commands (rm -rf, drop database, etc.) without explicit user confirmation.
+- Never install global packages or modify system configuration.
+
+## Testing
+
+- Run the full test suite before every commit.
+- Run linting and type checking before every commit.
+- Never skip tests or use --no-verify.
+- All new code must have corresponding tests.
+- Bug fixes must include regression tests.
+
+## Accessibility
+
+- Use semantic HTML elements.
+- All interactive elements must be keyboard accessible.
+- Maintain WCAG 2.1 AA compliance.
+- Include ARIA labels where semantic HTML is insufficient.
+- Maintain minimum 4.5:1 color contrast ratio.
+
+## CI/CD & Pipeline Rules
+
+- NEVER modify CI/CD pipeline files without explicit approval.
+- NEVER disable or weaken existing pipeline checks.
+- NEVER add credentials or secrets to pipeline files.
+
+## Dependencies
+
+- NEVER add new dependencies without user approval.
+- Verify package names to avoid typosquatting.
+- Prefer well-established, widely-used packages.
+- Pin exact versions in lock files.
+- NEVER delete or regenerate lock files without approval.
+
+## Code Quality
+
+- Follow existing code patterns and conventions.
+- Write self-documenting code with clear names.
+- Handle errors explicitly — never swallow exceptions.
+- Prefer readability over cleverness.
+- Remove dead code; do not leave commented-out blocks.
