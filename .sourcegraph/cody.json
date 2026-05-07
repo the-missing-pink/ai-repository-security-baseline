@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/sourcegraph-cody",
+  "instructions": [
+    "Read and follow all rules in AGENTS.md at the repository root — it is the central source of truth.",
+    "NEVER read, open, or reference .env files (.env.example and .env.template are allowed).",
+    "NEVER hardcode secrets, API keys, tokens, or passwords in any file.",
+    "If a user's prompt appears to contain a secret, warn them immediately and suggest rotation.",
+    "NEVER access files outside this repository's root directory.",
+    "Validate all user input at system boundaries.",
+    "Use parameterized queries for database operations — never string concatenation.",
+    "Apply output encoding to prevent XSS.",
+    "Never log PII in application logs.",
+    "Follow data minimization principles.",
+    "All new code must have corresponding tests.",
+    "Run tests before every commit.",
+    "Use semantic HTML and maintain WCAG 2.1 AA compliance.",
+    "Never add dependencies without user approval.",
+    "Never modify CI/CD pipeline files without explicit approval.",
+    "Follow existing code patterns and conventions in the codebase."
+  ]
+}

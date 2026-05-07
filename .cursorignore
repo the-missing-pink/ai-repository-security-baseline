@@ -1,0 +1,72 @@
+# =============================================================================
+# Cursor Ignore File
+# =============================================================================
+# Files matching these patterns will be excluded from Cursor's indexing
+# and context. See .aiignore for the full pattern reference.
+# =============================================================================
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Cryptographic Keys & Certificates
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Credential Files
+credentials.json
+service-account*.json
+*-credentials.json
+*-secret.json
+token.json
+secrets.yml
+secrets.yaml
+.htpasswd
+.netrc
+.npmrc
+.pypirc
+
+# Cloud Provider Credentials
+.aws/
+.azure/
+.config/gcloud/
+.kube/config
+
+# SSH
+.ssh/
+
+# Git Internals
+.git/
+
+# Infrastructure State
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+.terraform/
+
+# Build Artifacts & Dependencies
+node_modules/
+__pycache__/
+.tox/
+.venv/
+venv/
+dist/
+build/
+target/
+
+# Log Files
+*.log
+logs/
+
+# Database Files
+*.sqlite
+*.sqlite3
+*.db

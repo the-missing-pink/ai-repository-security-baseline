@@ -1,0 +1,25 @@
+# Aider Configuration
+# See: https://aider.chat/docs/config/aider_conf.html
+#
+# IMPORTANT: Read and follow all rules in AGENTS.md — it is the central
+# source of truth for this repository.
+
+# Read project conventions from CONVENTIONS.md
+read: ["CONVENTIONS.md", "AGENTS.md"]
+
+# Auto-lint before committing
+auto-lint: true
+
+# Auto-test before committing
+auto-test: true
+
+# Test command — update this for your project
+# test-cmd: npm test
+# test-cmd: pytest
+# test-cmd: go test ./...
+
+# Lint command — update this for your project
+# lint-cmd: npm run lint
+# lint-cmd: ruff check .
+
+# Respect .aiderignore for file exclusions
