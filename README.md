@@ -140,9 +140,19 @@ You can also strip out anything you don't want. The accessibility rules are poin
 
 ## A note on what this isn't
 
-This is a baseline, not a fortress. It won't stop a determined attacker who has compromised your machine. It won't catch every possible secret leak. It won't make your code GDPR-compliant on its own. It won't replace a proper security review.
+This is a baseline, not a fortress. It sets sensible defaults so the most common, most boring failure modes — the agent reading `.env`, the agent installing `requets` instead of `requests`, the agent quietly editing your GitHub Actions workflow — don't happen by accident. Most "AI security incidents" are exactly that kind of thing. These files make them less likely.
 
-What it does is set sensible defaults so that the most common, most boring failure modes — the agent reading `.env`, the agent installing `requets` instead of `requests`, the agent quietly editing your GitHub Actions workflow — don't happen by accident. Most "AI security incidents" are exactly that kind of thing. This file makes them harder to do.
+A few things worth being upfront about:
+
+1. **You're responsible for your own due diligence.** If you drop these files into your repo, review them first. Adjust them to your project, your stack, your threat model. Copying rules you don't understand is not a security strategy.
+
+2. **Rules are not guarantees.** This works the same way as giving instructions to a person: you can write down as many rules as you want, but there's no hard enforcement that they'll be followed — especially when the agent is being manipulated through prompt injection or adversarial inputs. Trust, but verify. Where you can enforce something through deterministic access controls (file permissions, network policies, CI gates), do that instead of relying on an instruction file.
+
+3. **This won't stop a sophisticated attack.** A compromised machine, a supply chain attack upstream of your dependencies, a zero-day in the agent itself — none of that is in scope here. This catches the accidental stuff, not the intentional stuff.
+
+4. **This doesn't replace a proper security review.** It won't make your code GDPR-compliant, SOC 2-ready, or audit-proof. It's a starting point, not a finish line.
+
+5. **No liability.** This repository is provided as-is, without warranties of any kind. The authors are not liable for any damages, security incidents, data loss, or other issues arising from its use. You use it at your own risk.
 
 ## Contributing
 
