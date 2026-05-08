@@ -209,6 +209,8 @@ jobs:
           persist-credentials: false
 
       - name: Check AI-authored commits for trailers
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
           echo "Checking for AI-authored commits without attribution trailers..."
           echo ""
@@ -218,7 +220,7 @@ jobs:
           AI_PATTERNS="noreply@anthropic|github-actions|copilot|cursor|codeium|devin|aider"
 
           # Find commits from AI agents in this PR
-          COMMITS=$(git log --format='%H %ae' origin/${{ github.base_ref }}..HEAD 2>/dev/null || true)
+          COMMITS=$(git log --format='%H %ae' "origin/$BASE_REF..HEAD" 2>/dev/null || true)
 
           ISSUES=0
           while IFS= read -r line; do
