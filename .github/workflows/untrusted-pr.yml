@@ -1,0 +1,176 @@
+# Untrusted PR Security Gate
+#
+# This workflow runs on PRs from forks and first-time contributors.
+# It operates in a restricted context with NO access to repository secrets.
+#
+# Purpose:
+#   1. Gate first-time contributors for manual review
+#   2. Scan PR diffs for secrets without exposing repo secrets
+#   3. Detect modifications to agent instruction files
+#
+# This implements the "split trusted/untrusted workflows" pattern
+# from AGENTS.md §12.5.
+#
+# [PLACEHOLDER — Update all SHA pins to the latest verified versions
+#  before enabling this workflow.]
+
+name: Untrusted PR Security Gate
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+# Explicit least-privilege: read-only contents, write issues (for labeling)
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  # -------------------------------------------------------------------
+  # Job 1: First-Time Contributor Gate
+  # Labels PRs from first-time or unknown contributors for manual review
+  # -------------------------------------------------------------------
+  gate-first-time:
+    name: First-Time Contributor Gate
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR' ||
+      github.event.pull_request.author_association == 'NONE'
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Label for manual security review
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea  # v7.0.1
+        with:
+          script: |
+            const labels = ['needs-security-review', 'first-time-contributor'];
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: labels
+            });
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '👋 Welcome! Since this is your first contribution, a maintainer will review this PR before CI workflows with elevated permissions are triggered. This is a standard security measure — thank you for your patience.'
+            });
+
+  # -------------------------------------------------------------------
+  # Job 2: Safe Secret Scan (No Secrets Context)
+  # Scans the PR diff for secrets without accessing repo secrets
+  # -------------------------------------------------------------------
+  safe-scan:
+    name: PR Diff Secret Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout PR HEAD (untrusted code)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Scan PR diff for secrets
+        uses: trufflesecurity/trufflehog@a3c62f92a4e30e1ac14b5a88bee30e5406bbbee1  # v3.88.26
+        with:
+          extra_args: --only-verified --since-commit=${{ github.event.pull_request.base.sha }}
+
+  # -------------------------------------------------------------------
+  # Job 3: Instruction File Guard
+  # Detects modifications to agent instruction files and CODEOWNERS
+  # -------------------------------------------------------------------
+  instruction-file-guard:
+    name: Instruction File Modification Guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout PR HEAD (untrusted code)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Detect changes to protected files
+        id: detect
+        run: |
+          # List of agent instruction files and security-sensitive paths
+          PROTECTED_PATTERNS=(
+            "AGENTS.md"
+            "CLAUDE.md"
+            "CONVENTIONS.md"
+            "devin.md"
+            ".clinerules"
+            ".windsurfrules"
+            ".continuerules"
+            ".cursor/rules/"
+            ".github/copilot-instructions.md"
+            ".github/workflows/"
+            ".amazonq/"
+            ".junie/"
+            ".sourcegraph/"
+            ".aider.conf.yml"
+            "CODEOWNERS"
+            "SECURITY.md"
+            "SECURITY_CHECKLIST.md"
+            ".pre-commit-config.yaml"
+            ".aiignore"
+            ".cursorignore"
+            ".clineignore"
+            ".aiderignore"
+          )
+
+          # Get changed files in the PR
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} 2>/dev/null || echo "")
+
+          FOUND_PROTECTED=""
+          for pattern in "${PROTECTED_PATTERNS[@]}"; do
+            MATCHES=$(echo "$CHANGED_FILES" | grep -F "$pattern" || true)
+            if [ -n "$MATCHES" ]; then
+              FOUND_PROTECTED="${FOUND_PROTECTED}${MATCHES}\n"
+            fi
+          done
+
+          if [ -n "$FOUND_PROTECTED" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            # Save the list for the comment step
+            echo -e "$FOUND_PROTECTED" > /tmp/protected-files.txt
+            echo "::warning::Protected files modified in this PR. Requires CODEOWNERS review."
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment on PR if protected files changed
+        if: steps.detect.outputs.found == 'true'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea  # v7.0.1
+        with:
+          script: |
+            const fs = require('fs');
+            const files = fs.readFileSync('/tmp/protected-files.txt', 'utf8').trim();
+            const body = `⚠️ **Security-sensitive files modified**
+
+            This PR modifies files that are protected by CODEOWNERS and require security-team review:
+
+            \`\`\`
+            ${files}
+            \`\`\`
+
+            These files control AI agent behavior, CI/CD pipelines, or security configuration. Changes to them are a known vector for persistent prompt injection and supply-chain attacks.
+
+            A CODEOWNERS review is required before merging. See AGENTS.md §16.2.`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
