@@ -78,7 +78,7 @@ jobs:
           fetch-depth: 0
 
       - name: Scan PR diff for secrets
-        uses: trufflesecurity/trufflehog@a3c62f92a4e30e1ac14b5a88bee30e5406bbbee1  # v3.88.26
+        uses: trufflesecurity/trufflehog@17456f8c7d042d8c82c9a8ca9e937231f9f42e26  # v3.95.2
         with:
           extra_args: --only-verified --since-commit=${{ github.event.pull_request.base.sha }}
 

@@ -45,7 +45,7 @@ jobs:
           persist-credentials: false
 
       - name: Run TruffleHog
-        uses: trufflesecurity/trufflehog@a3c62f92a4e30e1ac14b5a88bee30e5406bbbee1  # v3.88.26
+        uses: trufflesecurity/trufflehog@17456f8c7d042d8c82c9a8ca9e937231f9f42e26  # v3.95.2
         with:
           extra_args: --only-verified --results=verified
 
@@ -132,6 +132,11 @@ jobs:
     name: Dependency Review (SCA)
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    # NOTE: This job requires Dependency Graph to be enabled on the repository.
+    # For private repos, this also requires GitHub Advanced Security (GHAS).
+    # Enable at: Settings → Code security → Dependency graph.
+    # If not available, this job will fail gracefully without blocking the PR.
+    continue-on-error: true
     permissions:
       contents: read
       pull-requests: write
