@@ -61,6 +61,29 @@ These tell agents which files not to read at all — `.env`, private keys, cloud
 - `.aiignore` — the canonical list, used as a reference for the others
 - `.cursorignore`, `.clineignore`, `.aiderignore` — tool-specific copies
 
+### Security hardening
+
+Beyond agent behavior rules, the baseline includes hardening across five areas grounded in real 2025–2026 AI-agent supply-chain breaches:
+
+1. **CI/CD runtime** — SHA-pinned actions, least-privilege tokens, default-deny egress, split trusted/untrusted workflows, first-time contributor gating.
+2. **Secret management** — OIDC/workload-identity federation, short-lived tokens, environment protection rules, credential separation.
+3. **Agent sandboxing** — Tool inventory, devcontainer isolation, dangerous-flag stripping, read-only defaults for data-source tools.
+4. **Code scanning** — Pre-commit hooks (gitleaks), CI-mandatory SAST (CodeQL + Semgrep), SCA (dependency-review), lockfile integrity checks, AI commit attribution auditing.
+5. **Blast-radius control** — Allow/deny lists per repo, CODEOWNERS enforcement on instruction files, audit logging, documented kill-switch procedure.
+
+See `SECURITY_CHECKLIST.md` for the step-by-step adoption guide.
+
+The hardening files:
+
+- `SECURITY_CHECKLIST.md` — step-by-step checklist for adopting all five pillars
+- `SECURITY.md` — vulnerability reporting, kill-switch procedure, credential rotation runbook
+- `CODEOWNERS` — enforces human review for instruction files, CI configs, and security-sensitive paths
+- `.pre-commit-config.yaml` — local hooks for secret scanning (gitleaks) and safety checks
+- `.github/workflows/ai-security-scan.yml` — CI pipeline: SAST, SCA, secret scanning, lockfile integrity
+- `.github/workflows/untrusted-pr.yml` — restricted pipeline for fork and first-time contributor PRs
+- `AGENT_TOOL_INVENTORY.md` — template for documenting agent tools and MCP servers
+- `.devcontainer/devcontainer.json` — sandboxed development environment template
+
 ## What the rules actually cover
 
 The instructions in `AGENTS.md` are organized around six main themes. Here's what each one is trying to prevent.

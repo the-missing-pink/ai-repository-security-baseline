@@ -1,0 +1,71 @@
+# CODEOWNERS — Security-Sensitive Path Review Requirements
+#
+# This file enforces human review for paths that control AI agent behavior,
+# CI/CD pipelines, and security configuration. Changes to these paths
+# require approval from the security team before merging.
+#
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# [PLACEHOLDER — Replace @SECURITY-TEAM with your GitHub team or usernames,
+#  e.g., @myorg/security-team or @alice @bob]
+
+# ===========================================================================
+# AI Agent Instruction Files (Pillar 5: blast-radius protection)
+# These are a known persistence mechanism — a prompt injection that modifies
+# them becomes a durable, cross-session behavior change.
+# ===========================================================================
+AGENTS.md                           @SECURITY-TEAM
+CLAUDE.md                           @SECURITY-TEAM
+CONVENTIONS.md                      @SECURITY-TEAM
+devin.md                            @SECURITY-TEAM
+.clinerules                         @SECURITY-TEAM
+.windsurfrules                      @SECURITY-TEAM
+.continuerules                      @SECURITY-TEAM
+.aider.conf.yml                     @SECURITY-TEAM
+.cursor/rules/                      @SECURITY-TEAM
+.github/copilot-instructions.md     @SECURITY-TEAM
+.amazonq/                           @SECURITY-TEAM
+.junie/                             @SECURITY-TEAM
+.sourcegraph/                       @SECURITY-TEAM
+
+# ===========================================================================
+# CI/CD Pipeline Definitions (Pillar 1: lock down CI/CD)
+# ===========================================================================
+.github/workflows/                  @SECURITY-TEAM
+
+# ===========================================================================
+# Security Configuration Files
+# ===========================================================================
+SECURITY.md                         @SECURITY-TEAM
+SECURITY_CHECKLIST.md               @SECURITY-TEAM
+CODEOWNERS                          @SECURITY-TEAM
+.pre-commit-config.yaml             @SECURITY-TEAM
+AGENT_TOOL_INVENTORY.md             @SECURITY-TEAM
+
+# ===========================================================================
+# Ignore Files (control what AI agents can see)
+# ===========================================================================
+.aiignore                           @SECURITY-TEAM
+.cursorignore                       @SECURITY-TEAM
+.clineignore                        @SECURITY-TEAM
+.aiderignore                        @SECURITY-TEAM
+
+# ===========================================================================
+# Infrastructure & Deployment (uncomment and customize as needed)
+# ===========================================================================
+# Dockerfile                        @SECURITY-TEAM
+# docker-compose*.yml               @SECURITY-TEAM
+# *.tf                              @SECURITY-TEAM
+# *.tfvars                          @SECURITY-TEAM
+# k8s/                              @SECURITY-TEAM
+# serverless.yml                    @SECURITY-TEAM
+
+# ===========================================================================
+# Project-Specific Security-Sensitive Paths (customize for your project)
+# ===========================================================================
+# [PLACEHOLDER — Add paths to authentication, authorization, payment,
+#  cryptography, or other security-critical modules]
+# src/auth/                         @SECURITY-TEAM
+# src/crypto/                       @SECURITY-TEAM
+# src/payments/                     @SECURITY-TEAM
+# lib/security/                     @SECURITY-TEAM

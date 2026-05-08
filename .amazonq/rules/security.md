@@ -44,6 +44,13 @@
 - Never modify CI/CD pipeline files without explicit approval.
 - Never disable or weaken pipeline checks.
 
+## Agent Sandboxing & Blast Radius
+
+- All tools and MCP servers must be documented in AGENT_TOOL_INVENTORY.md.
+- Never use dangerous flags: --force, --no-verify, --skip-integrity-check, --dangerously-skip-permissions.
+- Include an Assisted-by or Co-Authored-By trailer in all commits.
+- Follow the sandboxing rules in AGENTS.md section 9.5 and blast-radius policy in section 16.
+
 ## Accessibility
 
 - Use semantic HTML.

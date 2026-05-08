@@ -1,0 +1,98 @@
+{
+  // AI Agent Sandbox — Devcontainer Configuration
+  //
+  // This devcontainer provides an isolated environment for AI agent work.
+  // It prevents agents from accessing host credentials, SSH keys, and
+  // production environment files.
+  //
+  // See AGENTS.md §9.5 for sandboxing requirements.
+  //
+  // Usage:
+  //   - VS Code: "Dev Containers: Reopen in Container"
+  //   - GitHub Codespaces: Automatically uses this config
+  //   - CLI: devcontainer up --workspace-folder .
+  //
+  // [PLACEHOLDER — Customize the base image, features, and post-create
+  //  command for your project's language and framework.]
+
+  "name": "AI Agent Sandbox",
+
+  // Base image — choose one appropriate for your project
+  // [PLACEHOLDER — Replace with your project's base image, pinned by digest]
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+
+  // Language/tool features — uncomment and customize as needed
+  "features": {
+    // [PLACEHOLDER — Add features for your project's language/tools]
+    // "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+    // "ghcr.io/devcontainers/features/python:1": { "version": "3.12" },
+    // "ghcr.io/devcontainers/features/go:1": { "version": "1.22" },
+    // "ghcr.io/devcontainers/features/rust:1": {},
+
+    // Git (usually included in base image)
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+
+  // IDE customizations
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        // [PLACEHOLDER — Add extensions for your project]
+      ]
+    }
+  },
+
+  // Post-create setup
+  // [PLACEHOLDER — Replace with your project's install command]
+  // "postCreateCommand": "npm ci --ignore-scripts",
+
+  // Run as non-root user
+  "remoteUser": "vscode",
+
+  // =========================================================================
+  // Security Configuration
+  // =========================================================================
+
+  // Environment marker — scripts can check this to detect sandbox mode
+  "containerEnv": {
+    "AI_AGENT_SANDBOX": "true",
+    "HISTFILE": "/dev/null"
+  },
+
+  // Network isolation (uncomment for full network deny-by-default)
+  // WARNING: This will break package installs. Use only when all
+  // dependencies are pre-installed in the image.
+  // "runArgs": ["--network=none"],
+
+  // Read-only filesystem (uncomment for maximum isolation)
+  // The workspace is writable; everything else is read-only.
+  // "runArgs": ["--read-only", "--tmpfs=/tmp"],
+
+  // Drop all Linux capabilities except those explicitly needed
+  // "runArgs": ["--cap-drop=ALL"],
+
+  // Prevent container from accessing host PID namespace
+  // "runArgs": ["--pid=container"],
+
+  // Mount the workspace — agent can read/write project files
+  // but NOT access host home directory, SSH keys, or cloud credentials
+  "mounts": [
+    // Block access to host SSH keys
+    // "source=/dev/null,target=/home/vscode/.ssh,type=bind,readonly",
+
+    // Block access to host AWS credentials
+    // "source=/dev/null,target=/home/vscode/.aws,type=bind,readonly",
+
+    // Block access to host GCP credentials
+    // "source=/dev/null,target=/home/vscode/.config/gcloud,type=bind,readonly",
+
+    // Block access to host Azure credentials
+    // "source=/dev/null,target=/home/vscode/.azure,type=bind,readonly",
+
+    // Block access to host kubectl config
+    // "source=/dev/null,target=/home/vscode/.kube,type=bind,readonly"
+  ]
+}

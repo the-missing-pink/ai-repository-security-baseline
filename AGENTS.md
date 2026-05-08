@@ -16,14 +16,19 @@
 5. [Naming Conventions](#5-naming-conventions)
 6. [Git Workflow](#6-git-workflow)
 7. [Security Rules](#7-security-rules)
+   - 7.5 [Secret Lifecycle & Credential Federation](#75-secret-lifecycle--credential-federation)
 8. [Privacy Rules](#8-privacy-rules)
 9. [Access Restrictions](#9-access-restrictions)
+   - 9.5 [Agent Sandboxing & Tool-Surface Restrictions](#95-agent-sandboxing--tool-surface-restrictions)
 10. [Testing Requirements](#10-testing-requirements)
 11. [Accessibility Standards](#11-accessibility-standards)
 12. [CI/CD & Pipeline Rules](#12-cicd--pipeline-rules)
+    - 12.4 [CI/CD Runtime Hardening](#124-cicd-runtime-hardening)
+    - 12.5 [Workflow Trust Boundaries](#125-workflow-trust-boundaries)
 13. [Dependency & Supply Chain Security](#13-dependency--supply-chain-security)
 14. [Code Quality Standards](#14-code-quality-standards)
 15. [Agent Self-Governance](#15-agent-self-governance)
+16. [Blast-Radius Policy & Monitoring](#16-blast-radius-policy--monitoring)
 
 ---
 
@@ -157,6 +162,17 @@
 - Never rewrite history on branches that others may have pulled.
 - Always pull the latest changes before starting new work.
 
+### 6.4 AI Commit Attribution
+
+- All commits authored or co-authored by an AI agent **must** include a git trailer identifying the agent:
+  ```
+  Assisted-by: agent-name <agent-noreply-email>
+  ```
+  or the equivalent `Co-Authored-By:` trailer.
+- Pre-commit hooks and CI will verify this trailer on commits from known AI agent identities.
+- This enables reviewers to identify AI-generated code and apply appropriate scrutiny.
+- [PLACEHOLDER — Define the list of known AI agent email addresses/identifiers for your project]
+
 ---
 
 ## 7. Security Rules
@@ -213,6 +229,35 @@ The following files and directories must **never be modified** by AI agents with
 - Infrastructure-as-code files (`*.tf`, `serverless.yml`, `cdk.json`, `pulumi.*`)
 - Kubernetes manifests (`*.yaml` in `k8s/`, `deploy/`, `manifests/`)
 - [PLACEHOLDER - Add project-specific protected files]
+
+### 7.5 Secret Lifecycle & Credential Federation
+
+> Assume any credential an AI agent's environment can read will eventually be exfiltrated — by prompt injection, a poisoned dependency, or a malicious MCP server. Design accordingly.
+
+#### OIDC & Workload-Identity Federation
+
+- **Prefer OIDC / workload-identity federation** over static secrets for all CI-to-cloud and CI-to-registry authentication (e.g., GitHub Actions OIDC → AWS, GCP, Azure).
+- No static secret in the runner means nothing to steal. Where OIDC is supported, static keys are not acceptable.
+
+#### Static Secret Controls
+
+- Where static secrets are unavoidable, gate them behind **environment protection rules** that require manual approval before secrets are materialized into the runner.
+- **Separate publish/deploy credentials from build credentials.** An agent performing routine build and test work must never hold a token that can publish a package, push to `main`, or deploy to production.
+- Store secrets in your CI/CD platform's secret manager (GitHub Actions Secrets, Vault, etc.) — never in environment variables baked into images or config files.
+
+#### Token Lifetime
+
+- All tokens must have the **shortest practical TTL**. Prefer minutes over hours, hours over days.
+- Access tokens and refresh tokens must never both be accessible within the same scope. If both live where the agent can see them, the expiry is theatrical.
+- Service account keys with no expiry are prohibited; use time-bound credentials.
+
+#### Credential Inventory
+
+Maintain a register of all credentials the CI/CD pipeline and AI agents can access:
+
+| Credential | Purpose | Type | TTL | Rotation Schedule | Owner |
+|------------|---------|------|-----|-------------------|-------|
+| [PLACEHOLDER] | [PLACEHOLDER] | OIDC / static / service-account | [PLACEHOLDER] | [PLACEHOLDER] | [PLACEHOLDER] |
 
 ---
 
@@ -313,6 +358,61 @@ npm run typecheck
 npm ci
 # pnpm install --frozen-lockfile
 # pip install -r requirements.txt
+```
+
+### 9.5 Agent Sandboxing & Tool-Surface Restrictions
+
+> The model isn't the threat surface — its tools are. MCP servers, shell access, and permission-bypass flags convert natural language into arbitrary code execution.
+
+#### Tool Inventory
+
+- Every connected tool, MCP server, IDE extension, and plugin available to AI agents **must** be documented in `AGENT_TOOL_INVENTORY.md`.
+- The inventory must record: tool name, purpose, access level (read-only / read-write), who approved it, and when.
+- Review the inventory quarterly. Remove tools that are no longer needed.
+
+#### Read-Only by Default
+
+- Data-source tools (database viewers, file browsers, API clients, drive/mail/wiki integrations) must be configured **read-only** unless write access is explicitly justified and approved per-task.
+- Write scopes require an explicit, per-task elevation — never a standing grant.
+
+#### Dangerous Flag Deny List
+
+AI agents must **never** use the following flags or their equivalents, regardless of context:
+
+- `--force`, `-f` (on destructive operations)
+- `--no-verify` (skips pre-commit hooks and other safety checks)
+- `--skip-integrity-check`
+- `--dangerously-skip-permissions`
+- `--disable-security`
+- `--trust` (blanket trust flags)
+- `--ignore-scripts` bypass overrides (e.g., removing `--ignore-scripts` from safe install commands)
+
+Wrapper scripts should strip these flags rather than relying on agents or users to remember.
+
+#### Disposable Environments
+
+- AI agent work should occur in **disposable, isolated environments** where practical: devcontainers, ephemeral VMs, or sandboxed shells.
+- Agent environments must not have access to: host SSH keys, production `.env` files, persistent home directories with credentials, or cloud credential stores (`~/.aws/`, `~/.config/gcloud/`, `~/.kube/`).
+- See `.devcontainer/devcontainer.json` for the baseline sandbox configuration.
+
+#### MCP Server Security
+
+- MCP server configuration files must **never** be committed with embedded credentials.
+- MCP config files containing secrets must be listed in `.aiignore` and all tool-specific ignore files.
+- Each MCP server's permissions must follow least-privilege: grant only the scopes the agent actually needs.
+
+#### Network Allow/Deny List
+
+```
+[PLACEHOLDER — Define the approved network destinations for AI agent tools]
+# Allowed destinations
+# - registry.npmjs.org (package installs)
+# - pypi.org (package installs)
+# - api.github.com (GitHub API)
+# - [Add project-specific endpoints]
+
+# Denied patterns (catch-all deny for unlisted endpoints)
+# - * (all unlisted endpoints are denied by default)
 ```
 
 ---
@@ -429,6 +529,68 @@ npm run test:coverage
 - Ensure rollback mechanisms exist before deploying new features.
 - Use blue-green or canary deployment strategies for critical services.
 - [PLACEHOLDER - Define project-specific deployment rules]
+
+### 12.4 CI/CD Runtime Hardening
+
+> Most 2025–2026 AI-agent breaches (tj-actions, Cline, Shai-Hulud, prt-scan, Comment-and-Control) succeeded at the runner level, not the model level. Lock down the runtime.
+
+#### SHA Pinning
+
+- **Pin all third-party GitHub Actions by full commit SHA**, never by tag. Tags are mutable; digests are not.
+  ```yaml
+  # Correct — pinned by SHA with human-readable version in comment
+  uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+
+  # Wrong — mutable tag, vulnerable to supply-chain attacks
+  uses: actions/checkout@v4
+  ```
+- **Pin container images by SHA256 digest**, not by tag.
+  ```dockerfile
+  # Correct
+  FROM node@sha256:abc123...
+
+  # Wrong
+  FROM node:20-alpine
+  ```
+- Use Dependabot or Renovate to automate SHA pin updates with human-reviewed PRs.
+
+#### Default-Deny Egress
+
+- Runners should have **default-deny outbound network access** with an explicit allowlist of domains the workflow actually needs.
+- Anomalous outbound calls are the single most reliable signal of a compromised dependency or action.
+- Consider [StepSecurity Harden-Runner](https://github.com/step-security/harden-runner) or equivalent for egress monitoring.
+- [PLACEHOLDER — Define your workflow egress allowlist]
+
+#### Least-Privilege CI Tokens
+
+- Every workflow and every job must declare an explicit `permissions:` block. Never rely on the default (which may be `write-all`).
+- Grant elevated scopes **only on the specific job** that needs them, not at the workflow level.
+- Use `persist-credentials: false` on `actions/checkout` unless the job explicitly needs to push.
+- Never pass `secrets.GITHUB_TOKEN` with write permissions to jobs that only need to read.
+
+#### Secrets in CI
+
+- **Never let AI agents read untrusted input** (issues, PR comments, external docs) **in a workflow that has access to secrets.**
+- Split it into two workflows: one privileged (with secrets), one that reads untrusted content with no secrets attached.
+- See `.github/workflows/untrusted-pr.yml` for the boilerplate untrusted-content workflow.
+
+### 12.5 Workflow Trust Boundaries
+
+#### Trusted vs. Untrusted Workflows
+
+- **Trusted workflows** (`pull_request`, `push`): Run on code from collaborators. May access repository secrets. Use for main-branch CI and collaborator PRs.
+- **Untrusted workflows** (`pull_request_target`): Run on code from forks and external contributors. Must **never** access secrets. Must checkout the PR HEAD explicitly with `persist-credentials: false`.
+
+#### First-Time Contributor Gating
+
+- PRs from users with `author_association` of `FIRST_TIME_CONTRIBUTOR` or `NONE` must be **labeled for manual security review** before any AI-touched workflow with secret access runs.
+- External PRs must not trigger AI-agent workflows that have access to secrets without manual approval.
+
+#### Instruction-File Guard
+
+- CI must **detect and flag** PRs that modify any agent instruction file (AGENTS.md, CLAUDE.md, .clinerules, etc.) or CODEOWNERS.
+- These files are a known persistence mechanism — a one-time prompt injection that edits them becomes a durable behavior change.
+- See `.github/workflows/untrusted-pr.yml` for the boilerplate instruction-file guard job.
 
 ---
 
@@ -565,6 +727,77 @@ If you detect any of the following, **immediately notify the user**:
 
 ---
 
+## 16. Blast-Radius Policy & Monitoring
+
+> `AGENTS.md` describes what the agent should do. This section defines what it **can't** do, plus detection for when rules are tampered with.
+
+### 16.1 Allow/Deny Lists
+
+Define explicit per-repository restrictions. These extend the global rules in sections 7 and 9.
+
+#### Path Restrictions
+
+| Path | Agent Access | Justification |
+|------|-------------|---------------|
+| `src/` | read-write | [PLACEHOLDER — Application source code] |
+| `tests/` | read-write | [PLACEHOLDER — Test code] |
+| `.github/workflows/` | read-only | CI/CD — changes require CODEOWNERS review |
+| `AGENTS.md`, `CLAUDE.md`, instruction files | read-only | Agent instructions — changes require CODEOWNERS review |
+| [PLACEHOLDER] | [PLACEHOLDER] | [PLACEHOLDER] |
+
+#### Forbidden Commands
+
+The following commands are **never** permitted for AI agents, beyond the restrictions in section 9.3:
+
+- `git push --force` / `git push --force-with-lease` to shared branches
+- `git tag -d` / `git push --delete` (tag or branch deletion)
+- `npm publish` / `pip upload` / `cargo publish` / any package publish command
+- `rm -rf /` or any recursive delete outside the working directory
+- Any command that touches GPG/SSH signing material
+- [PLACEHOLDER — Add project-specific forbidden commands]
+
+#### Network Restrictions
+
+See section 9.5 for the network allow/deny list template.
+
+### 16.2 Instruction File Protection
+
+- All agent instruction files listed in Appendix A **must** be protected via `CODEOWNERS`, requiring security-team review for any modification.
+- CI must run the `instruction-file-guard` job (see `.github/workflows/untrusted-pr.yml`) to detect and flag PRs that modify these files.
+- Agent instruction files are a **known persistence mechanism**: a one-time prompt injection that edits them becomes a durable, cross-session behavior change.
+- Changes to `CODEOWNERS` itself must also require security-team review.
+
+### 16.3 Audit Logging & Review
+
+- All AI agent commits must include an `Assisted-by:` or `Co-Authored-By:` trailer (see section 6.4).
+- Teams should **review AI-authored commits weekly** using the git log:
+  ```bash
+  git log --all --grep="Assisted-by:" --grep="Co-Authored-By:" --since="1 week ago"
+  ```
+- Review checklist for weekly audits:
+  - [ ] Any unusual commit timing (outside working hours, high volume)?
+  - [ ] Any first-time file paths touched by AI agents?
+  - [ ] Any modifications to instruction files, CI configs, or CODEOWNERS?
+  - [ ] Any anomalous egress destinations in CI logs?
+  - [ ] Any new dependencies added without corresponding approval?
+- Pipe CI runner logs to a centralized log store for long-term AI action tracing where practical.
+
+### 16.4 Kill-Switch Procedure
+
+Every team member with repository access should know how to disable AI agent access within minutes. See `SECURITY.md` for the full runbook.
+
+**Summary of kill-switch steps:**
+
+1. **Revoke CI/CD tokens** — Disable GitHub App installations, revoke PATs, rotate `GITHUB_TOKEN` permissions to `read-only`.
+2. **Disable AI agent workflows** — Disable workflows in `.github/workflows/` via the GitHub UI or by pushing a commit that removes workflow triggers.
+3. **Remove MCP server connections** — Disconnect all MCP servers from agent configurations.
+4. **Rotate affected credentials** — Rotate any secrets that may have been exposed.
+5. **Review recent AI-authored commits** — Audit the last 48 hours of AI-attributed commits for suspicious changes.
+
+**Test the kill-switch quarterly.** A kill-switch you've never tested is a kill-switch that doesn't work.
+
+---
+
 ## Appendix A: Tool-Specific Configuration Files
 
 This repository includes configuration files for the following AI tools. Each file references this `AGENTS.md` as the source of truth.
@@ -583,6 +816,19 @@ This repository includes configuration files for the following AI tools. Each fi
 | Devin | `devin.md` | Markdown |
 | Sourcegraph Cody | `.sourcegraph/cody.json` | JSON |
 | OpenAI Codex | `AGENTS.md` (this file) | Markdown |
+
+### Security Hardening Files
+
+| File | Purpose |
+|------|---------|
+| `SECURITY_CHECKLIST.md` | Step-by-step adoption checklist for the five security pillars |
+| `SECURITY.md` | Vulnerability reporting, kill-switch procedure, credential rotation runbook |
+| `CODEOWNERS` | Enforces human review for security-sensitive paths |
+| `.pre-commit-config.yaml` | Pre-commit hooks for secret scanning and SAST |
+| `.github/workflows/ai-security-scan.yml` | CI pipeline: SAST, SCA, secret scanning, lockfile integrity |
+| `.github/workflows/untrusted-pr.yml` | Restricted pipeline for fork and first-time contributor PRs |
+| `AGENT_TOOL_INVENTORY.md` | Template for documenting agent tools and MCP servers |
+| `.devcontainer/devcontainer.json` | Sandboxed development environment template |
 
 ### Ignore Files
 
@@ -619,3 +865,7 @@ This repository includes configuration files for the following AI tools. Each fi
 - [ ] No files outside the allowed scope were modified.
 - [ ] Commit message follows project conventions.
 - [ ] Changes are on a feature branch, not the main branch.
+- [ ] Commit includes an `Assisted-by:` or `Co-Authored-By:` trailer identifying the AI agent.
+- [ ] No agent instruction files were modified without showing a diff and getting approval.
+- [ ] No dangerous CLI flags (`--force`, `--no-verify`, etc.) were used.
+- [ ] All tools and MCP servers used are documented in `AGENT_TOOL_INVENTORY.md`.

@@ -1,0 +1,111 @@
+# Pre-commit hooks for AI agent security
+#
+# Install:
+#   pip install pre-commit
+#   pre-commit install
+#   pre-commit install --hook-type commit-msg
+#
+# Run on all files:
+#   pre-commit run --all-files
+#
+# Update hook versions:
+#   pre-commit autoupdate
+#
+# See: https://pre-commit.com
+#
+# [PLACEHOLDER — Update rev values to the latest stable versions
+#  before enabling. Run `pre-commit autoupdate` to fetch latest.]
+
+repos:
+  # ---------------------------------------------------------------------------
+  # Secret Scanning — gitleaks
+  # Catches secrets (API keys, tokens, passwords) before they reach the repo.
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.22.1  # [PLACEHOLDER — Pin to latest stable version]
+    hooks:
+      - id: gitleaks
+
+  # ---------------------------------------------------------------------------
+  # General Safety Hooks
+  # Catches common mistakes: private keys, large files, merge conflicts.
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0  # [PLACEHOLDER — Pin to latest stable version]
+    hooks:
+      # Detect private keys (RSA, DSA, EC, etc.)
+      - id: detect-private-key
+
+      # Prevent committing large files (default: 500KB)
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+
+      # Detect leftover merge conflict markers
+      - id: check-merge-conflict
+
+      # Prevent direct commits to main/develop
+      - id: no-commit-to-branch
+        args: ['--branch', 'main', '--branch', 'develop']
+
+      # Ensure files end with a newline
+      - id: end-of-file-fixer
+
+      # Trim trailing whitespace
+      - id: trailing-whitespace
+
+      # Check YAML syntax
+      - id: check-yaml
+        args: ['--allow-multiple-documents']
+
+      # Check JSON syntax
+      - id: check-json
+
+  # ---------------------------------------------------------------------------
+  # AI Commit Attribution Check (commit-msg hook)
+  # Reminds developers to include Assisted-by trailers on AI-authored commits.
+  # This is advisory, not blocking — customize the detection logic for your team.
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: ai-commit-trailer-check
+        name: Check AI commit attribution trailer
+        entry: bash -c 'if git log -1 --format="%ae" | grep -qiE "noreply@anthropic|copilot|cursor|codeium|devin|aider"; then if ! grep -qiE "(Assisted-by|Co-Authored-By):" "$1"; then echo "WARNING: AI-authored commit is missing an Assisted-by or Co-Authored-By trailer."; echo "See AGENTS.md §6.4 for the commit attribution policy."; fi; fi; exit 0'
+        language: system
+        stages: [commit-msg]
+        always_run: true
+
+  # ---------------------------------------------------------------------------
+  # SAST — Semgrep (optional, uncomment to enable)
+  # Runs lightweight static analysis locally before commits.
+  # ---------------------------------------------------------------------------
+  # - repo: https://github.com/semgrep/semgrep
+  #   rev: v1.100.0  # [PLACEHOLDER — Pin to latest stable version]
+  #   hooks:
+  #     - id: semgrep
+  #       args: ['--config', 'p/secrets', '--config', 'p/owasp-top-ten', '--error', '--severity', 'ERROR']
+
+  # ---------------------------------------------------------------------------
+  # Language-Specific Linters (uncomment what applies)
+  # ---------------------------------------------------------------------------
+
+  # Python — Ruff (linter + formatter)
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #   rev: v0.8.0  # [PLACEHOLDER]
+  #   hooks:
+  #     - id: ruff
+  #       args: ['--fix']
+  #     - id: ruff-format
+
+  # JavaScript/TypeScript — ESLint
+  # - repo: https://github.com/pre-commit/mirrors-eslint
+  #   rev: v9.0.0  # [PLACEHOLDER]
+  #   hooks:
+  #     - id: eslint
+  #       files: \.[jt]sx?$
+  #       types: [file]
+
+  # Go — golangci-lint
+  # - repo: https://github.com/golangci/golangci-lint
+  #   rev: v1.62.0  # [PLACEHOLDER]
+  #   hooks:
+  #     - id: golangci-lint

@@ -1,0 +1,14 @@
+# Semgrep ignore patterns
+#
+# The untrusted-pr.yml workflow intentionally uses pull_request_target
+# with checkout of PR code. This is safe because:
+#   1. No PR code is executed (no build scripts, no dependency installs)
+#   2. safe-scan only passes checkout to TruffleHog (a prebuilt action)
+#   3. instruction-file-guard only runs `git diff --name-only` (read-only)
+#   4. Both jobs use persist-credentials: false
+#   5. Neither job has access to repository secrets
+#
+# Semgrep's pull-request-target-code-checkout rule flags this pattern
+# generically but the specific usage here is audited and safe.
+# See: https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+.github/workflows/untrusted-pr.yml

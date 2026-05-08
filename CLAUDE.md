@@ -82,6 +82,13 @@ Use only the commands defined in the "Allowed Commands" section of `AGENTS.md`.
 - NEVER disable, skip, or weaken pipeline checks.
 - Follow the CI/CD rules in AGENTS.md section 12.
 
+## Agent Sandboxing & Blast Radius
+
+- All tools and MCP servers you use must be documented in `AGENT_TOOL_INVENTORY.md`.
+- Never use dangerous flags: `--force`, `--no-verify`, `--skip-integrity-check`, `--dangerously-skip-permissions`.
+- Include an `Assisted-by:` or `Co-Authored-By:` trailer in all commits you author.
+- Follow the sandboxing rules in AGENTS.md section 9.5 and blast-radius policy in section 16.
+
 ## Placeholder Sections
 
 If you encounter `[PLACEHOLDER]` markers in `AGENTS.md`, you may help the user fill them in:
